@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <form action="{% url 'djangoapp:login' %}"  method="post">
+        {% csrf_token %}
+        <div class="bg-light">
+            <div class="container py-5">
+                <div class="row h-100 align-items-center py-5">
+                    <div class="col-lg-6">
+                        <h1 class="display-5">Login</h1>
+                        <div class="form-outline mb-4">
+                            <label for="username"><b>User Name</b></label>
+                            <input type="text" placeholder="Enter User Name: " name="username" required>
+                        </div>
+                        <div class="form-outline mb-4">
+                            <label for="psw"><b>Password</b></label>
+                            <input type="password" placeholder="Enter Password: " name="psw" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block mb-4">Login</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</body>
+</html>

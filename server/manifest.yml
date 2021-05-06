@@ -1,11 +1,11 @@
-  applications:
-  - name: dealerreiew
+applications:
+  - name: guestbook
     routes:
-      - route: host.domain
+      - route: albertoprime.eu-gb.cf.appdomain.cloud
     memory: 128M
     buildpack: python_buildpack
-  - name: dealerreiew-nginx
+  - name: guestbook-nginx
     routes:
-      - route: host.domain/static
+      - route: albertoprime.eu-gb.cf.appdomain.cloud/static
     memory: 128M
     buildpack: staticfile_buildpack
