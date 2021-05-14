@@ -1,16 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/css/bootstrap-datepicker.css" rel="stylesheet">
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.js"></script>
-
-</head>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta charset="UTF-8">
+        <title>Dealership Review</title>
+        {% load static %}
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    </head>
     <body>
-    <!--Add review form here -->
+        <nav class="navbar navbar-dark bg-dark">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" href="{% url 'djangoapp:index' %}">Home</a>
+                        <a class="navbar-brand" href="{% url 'djangoapp:about' %}">About us</a>
+                        <a class="navbar-brand" href="{% url 'djangoapp:contact' %}">Contact us</a>
+                    </div>
+                    <ul class="nav navbar-nav navbar-right">
+                    {% if user.is_authenticated %}
+                        <li>
+                            <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
+                            <a class="btn btn-link" href="{% url 'djangoapp:logout' %}">Logout</a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <form class="form-inline" action="{% url 'djangoapp:login' %}" method="post">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Username" name="username" >
+                                    <input type="password" class="form-control" placeholder="Password" name="psw" >
+                                    <button class="btn btn-primary" type="submit">Login</button>
+                                    <a class="btn btn-link" href="{% url 'djangoapp:registration' %}">Register</a>
+                                </div>
+                            </form>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+        </nav>
+        <form action="{% url 'djangoapp:add_review' dealer_id  dealer_full_name%}" method="post">
+        {% csrf_token %}
+            <div class="page-header py-3 px-5">
+                <h1>Review for dealer {{ dealer_full_name }}</h1>
+            </div>
+            <div class="container">
+                <div class="form-outline">
+                    <label class="form-label" for="content">Enter the review content:</label>
+                    <textarea class="form-control" id="content" name="content" rows="2" required></textarea>
+                </div>
+                <div class="form-check justify-content-center mb-4">
+                    <input class="form-check-input me-2" type="checkbox" name="purchasecheck" id="purchasecheck"/>
+                    <label class="form-check-label" for="purchasecheck">Has purchased the car from {{ dealer_full_name }}?</label>
+                </div>
+                <div class="form-outline">
+                    <label class="form-label" for="car">Select your car (model - make - year):</label>
+                    <select name="car" id="car" class="form-select" >
+                    {% for car in cars %}
+                        <option selected value={{car.id}}>{{car.name}}-{{car.car_make.name}}-{{ car.year|date:"Y" }}</option>
+                    {% endfor %}
+                    </select>
+                </div>
+                <div class="form-outline">
+                    <label class="form-label" for="purchasedate">Select your purchase date:</label>
+                    <input class="date-own form-control" type="text" name="purchasedate" id="purchasedate"/>
+                </div>
+                <div class="form-outline">
+                    <hr>
+                    <button type="submit" class="btn btn-primary btn-block mb-4">Submit</button>
+                </div>
+            </div>
+        </form>
+        <script type="text/javascript">
+            $('.date-own').datepicker({
+                format: 'mm/dd/yyyy'
+            });
+        </script>
     </body>
 </html>

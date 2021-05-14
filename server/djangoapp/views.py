@@ -1,33 +1,37 @@
-from django.shortcuts import render
-from django.http import HttpResponseRedirect, HttpResponse
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, render, redirect
-# from .models import related models
-# from .restapis import related methods
-from django.contrib.auth import login, logout, authenticate
-from django.contrib import messages
 from datetime import datetime
 import logging
-import json
 
-# Get an instance of a logger
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.models import User
+from django.db.models import Max
+from django.shortcuts import render
+from django.urls import reverse
+
+from .models import CarModel, CarReview
+from .restapis import get_dealer_review_from_cf, get_dealers_from_cf, get_dealers_by_id, post_request
+from django.shortcuts import redirect
+
 logger = logging.getLogger(__name__)
 
+ibm_cloud_url = "https://service.eu.apiconnect.ibmcloud.com/gws/apigateway/"
+ibm_cloud_api = "api/66c2d60e7b2effc7b7c0cfad382d7057e14842b53713bc3a4b238b33266e5067/"
 
-# Create your views here.
+post_review_api = "dealership_api/post_review"
+get_reviews_api = "dealership_api/get_reviews"
+get_dealerships_api = "dealership_api/get_dealerships"
 
 
-# Create an `about` view to render a static about page
+# Render about page
 def about(request):
     return render(request, 'djangoapp/about.html')
 
 
-# Create a `contact` view to return a static contact page
+# Render contact page
 def contact(request):
     return render(request, 'djangoapp/contact.html')
 
 
-# Create a `login_request` view to handle sign in request
+# Handle customer login request
 def login_request(request):
     context = {}
     # Handles POST request
@@ -48,7 +52,7 @@ def login_request(request):
         return render(request, 'djangoapp/user_login.html', context)
 
 
-# Create a `logout_request` view to handle sign out request
+# Handle customer logout request
 def logout_request(request):
     # Get the user object based on session id in request
     print("Log out the user `{}`".format(request.user.username))
@@ -59,7 +63,7 @@ def logout_request(request):
     return render(request, 'djangoapp/index.html')
 
 
-# Create a `registration_request` view to handle sign up request
+# Handle customer registration request
 def registration_request(request):
     context = {}
     # If it is a GET request, just render the registration page
@@ -91,18 +95,83 @@ def registration_request(request):
             return render(request, 'djangoapp/user_registration.html', context)
 
 
-# Update the `get_dealerships` view to render the index page with a list of dealerships
+# Handle get dealership requests
 def get_dealerships(request):
-    context = {}
+    # If it is a GET request, load dealers using a restapi function an render the index page
     if request.method == "GET":
+        url = ibm_cloud_url + ibm_cloud_api + get_dealerships_api
+        # Get dealers from the URL passing no parameters to get all the results
+        dealerships = get_dealers_from_cf(url)
+        dealership_list = []
+        for element in dealerships:
+            dealership_list.append(element)
+        context = {"dealership_list": dealership_list}
         return render(request, 'djangoapp/index.html', context)
 
 
-# Create a `get_dealer_details` view to render the reviews of a dealer
-# def get_dealer_details(request, dealer_id):
-# ...
+# Handle dealer details requests (request a dealer_id)
+def get_dealer_details(request, dealer_id, dealer_full_name):
+    # If it is a GET request, load dealers using a restapi function an render the index page
+    if request.method == "GET":
+        url = ibm_cloud_url + ibm_cloud_api + get_reviews_api
+        # Get dealers from the URL passing dealer_id to get the specific dealer details
+        reviews = get_dealer_review_from_cf(url, dealer_id)
+        review_list = []
+        for review in reviews:
+            review_list.append(review)
+        context = {"review_list": review_list, "dealer_id": dealer_id, "dealer_full_name": dealer_full_name}
+        return render(request, 'djangoapp/dealer_details.html', context)
 
-# Create a `add_review` view to submit a review
-# def add_review(request, dealer_id):
-# ...
 
+# Handle add review requests (request a dealer_id)
+def add_review(request, dealer_id, dealer_full_name):
+    # If it is a GET request, load details and display add review page
+    if request.method == "GET":
+        # get the cars details for the specific dealer id
+        cars = CarModel.objects.filter(dealer_id=dealer_id)
+        # set the context
+        context = {"dealer_id": dealer_id, "dealer_full_name": dealer_full_name, "cars": cars}
+        # render the page
+        return render(request, 'djangoapp/add_review.html', context)
+    # If it is a POST request, save the review and then redirect to the detail page
+    if request.method == "POST" and request.user.is_authenticated:
+        review = dict()
+        # Set the message
+        review["review"] = request.POST["content"]
+        # Set Purchase flag to True or False
+        if "purchasecheck" in request.POST:
+            review["purchase"] = True
+        else:
+            review["purchase"] = False
+        # Set the reviewer name
+        if not request.user.first_name and not request.user.last_name:
+            review["name"] = request.user.first_name + " " + request.user.last_name
+        else:
+            review["name"] = request.user.username
+        car = CarModel.objects.get(id=request.POST["car"])
+        # Set the car related information
+        review["car_model"] = car.name
+        review["car_make"] = car.car_make.name
+        review["car_year"] = car.year.strftime("%Y")
+        # Set another flag to emtpy (not sure wht is this about)
+        review["another"] = ""
+        # Set the purchase date
+        review["purchase_date"] = request.POST["purchasedate"]
+        get_url = ibm_cloud_url + ibm_cloud_api + get_dealerships_api
+
+        review_list = get_dealer_review_from_cf(get_url, dealer_id="")
+        # Calculate the maximum id to define
+        id_to_use = 0
+        for review in review_list:
+            if review.id > id_to_use:
+                id_to_use = review.id
+        review["id"] = id_to_use + 1
+        # Set the dealership to the dealer ID
+        review["dealership"] = dealer_id
+
+        json_payload = dict()
+        json_payload["review"] = review
+        post_url = ibm_cloud_url + ibm_cloud_api + post_review_api
+        response = post_request(post_url, json_payload=json_payload)
+        return redirect(
+            reverse('djangoapp:dealer_details', kwargs={'dealer_id': dealer_id, 'dealer_full_name': dealer_full_name}))

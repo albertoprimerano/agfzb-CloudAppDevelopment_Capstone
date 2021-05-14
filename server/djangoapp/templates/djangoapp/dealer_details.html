@@ -1,18 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Dealership Review</title>
-    {% load static %}
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-</head>
-
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+    <head>
+        <meta charset="UTF-8">
+        <title>Dealership Review</title>
+        {% load static %}
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    </head>
     <body>
+        <nav class="navbar navbar-dark bg-dark">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a class="navbar-brand" href="{% url 'djangoapp:index' %}">Home</a>
+                        <a class="navbar-brand" href="{% url 'djangoapp:about' %}">About us</a>
+                        <a class="navbar-brand" href="{% url 'djangoapp:contact' %}">Contact us</a>
+                    </div>
+                    <ul class="nav navbar-nav navbar-right">
+                    {% if user.is_authenticated %}
+                        <li>
+                            <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
+                            <a class="btn btn-link" href="{% url 'djangoapp:add_review' dealer_id dealer_full_name%}">Add Review</a>
+                            <a class="btn btn-link" href="{% url 'djangoapp:logout' %}">Logout</a>
+                        </li>
+                        {% else %}
+                        <li>
+                            <form class="form-inline" action="{% url 'djangoapp:login' %}" method="post">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Username" name="username" >
+                                    <input type="password" class="form-control" placeholder="Password" name="psw" >
+                                    <button class="btn btn-primary" type="submit">Login</button>
+                                    <a class="btn btn-link" href="{% url 'djangoapp:registration' %}">Register</a>
+                                </div>
+                            </form>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </nav>
 
-    <!--Add a nav bar here -->
-
-    <!-- Add reviews as cards -->
-
+            <div class="bg-light">
+                <div class="page-header py-3 px-5">
+                    <h1>Reviews for dealer {{ dealer_full_name}}</h1>
+                </div>
+                <div class="container my-4">
+                    {%if review_list %}
+                    <div class="row">
+                    {% for review in review_list %}
+                         <div class="col-sm-4">
+                            <div class="card mt-4">
+                                <div class="card-header pull-left">
+                                    <img style="max-width:10%" class="thumbnail img-responsive" src="{{MEDIA_URL}}/emoji/{{review.sentiment}}.png"/>
+                                 </div>
+                                <div class="card-body">
+                                    {% if review.car_make %}
+                                        <h5 class="card-title">{{ review.car_make }}, {{review.car_model }}</h5>
+                                        <h6 class="card-title">{{ review.car_year}}</h6>
+                                    {% endif %}
+                                    <p class="card-text">{{ review.review }}</p>
+                                </div>
+                            </div>
+                         </div>
+                    {% endfor %}
+                    </div>
+                    {% else %}
+                    <div>
+                        No review yet ...
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </body>
-
 </html>
+
+
+
