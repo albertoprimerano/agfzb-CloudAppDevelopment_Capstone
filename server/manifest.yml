@@ -1,11 +1,11 @@
 applications:
-  - name: guestbook
+  - name: bestcars
     routes:
-      - route: albertoprime.eu-gb.cf.appdomain.cloud
+      - route: bestcars.eu-gb.cf.appdomain.cloud
     memory: 128M
     buildpack: python_buildpack
-  - name: guestbook-nginx
+  - name: bestcars-nginx
     routes:
-      - route: albertoprime.eu-gb.cf.appdomain.cloud/static
+      - route: bestcars.eu-gb.cf.appdomain.cloud/static
     memory: 128M
     buildpack: staticfile_buildpack
